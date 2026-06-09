@@ -1,0 +1,51 @@
+# deno-edge's app router (plain HTTP — TLS terminates at the proxy in front).
+# Adding an app = add a block here. {$FN_ZONE} comes from the container env (.env).
+#
+#   STATIC site  -> file_server from /srv/sites/<name>
+#   FUNCTION     -> reverse_proxy to edge-runtime (rewrite injects the fn name,
+#                   since edge-runtime routes by the first path segment)
+
+{
+	auto_https off
+	admin off
+	log {
+		output stdout
+		format console
+	}
+}
+
+# ============================ apps ============================
+
+# --- example static site ---
+http://hello-site.{$FN_ZONE} {
+	root * /srv/sites/hello-site
+	encode zstd gzip
+	file_server
+	handle_errors {
+		@404 expression `{http.error.status_code} == 404`
+		rewrite @404 /404.html
+		file_server
+	}
+}
+
+# --- example function ---
+http://hello.{$FN_ZONE} {
+	rewrite * /hello{uri}
+	reverse_proxy edge-runtime:9000
+}
+
+# ===================== control + fallback =====================
+# Catch-all: serves the on-demand-TLS ask endpoint (only needed if your front
+# proxy uses on-demand TLS — see Caddyfile.snippet) and a 404 for unknown hosts.
+http:// {
+	handle /_caddy/ask {
+		# approve only hosts this platform serves, so on-demand TLS can't be
+		# abused to mint certs for arbitrary hostnames pointed at the server.
+		@ok expression `{http.request.uri.query.domain}.endsWith(".{$FN_ZONE}")`
+		respond @ok 200
+		respond 404
+	}
+	handle {
+		respond "deno-edge: no app configured for {host}" 404
+	}
+}

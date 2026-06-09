@@ -1,0 +1,55 @@
+name: deno-edge
+
+# Self-hosted Deno Edge Functions + static-site platform. Two services:
+#   edge-runtime — runs functions (supabase/edge-runtime, the Supabase Cloud image)
+#   caddy        — owns app routing: file_server for static sites, proxy for functions
+#
+# This speaks plain HTTP on the published port; terminate TLS at a proxy in front
+# (see Caddyfile.snippet). Configure via .env (copy from .env.example).
+
+services:
+  edge-runtime:
+    image: supabase/edge-runtime:v1.74.0
+    container_name: deno-edge-runtime
+    hostname: edge-runtime
+    restart: unless-stopped
+    command: ["start", "--main-service", "/home/deno/functions/main"]
+    env_file:
+      # required:false so `docker compose config` validates before .env exists
+      - path: .env
+        required: false
+    volumes:
+      # STACK_DIR defaults to "." (vanilla docker compose). Set it to an absolute
+      # host path if your orchestrator runs compose from a different working dir
+      # (e.g. a docker-in-docker manager) — relative paths won't resolve there.
+      - ${STACK_DIR:-.}/functions:/home/deno/functions:ro
+    networks: [deno-edge]
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: deno-edge-caddy
+    hostname: deno-edge-caddy
+    restart: unless-stopped
+    environment:
+      - FN_ZONE=${FN_ZONE:-fn.example.com}
+    volumes:
+      - ${STACK_DIR:-.}/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${STACK_DIR:-.}/sites:/srv/sites:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      # The TLS-terminating proxy in front reverse-proxies to this.
+      - "${BIND_ADDR:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+    networks: [deno-edge]
+
+networks:
+  deno-edge:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

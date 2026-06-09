@@ -1,0 +1,34 @@
+# Front-proxy blocks for whatever TLS-terminating reverse proxy you run (these are
+# Caddy examples). deno-edge listens on the published HTTP port (default
+# 127.0.0.1:8080) — point the proxy there. Adapt the upstream to your setup.
+
+# ───────────────────────────────────────────────────────────────────────────
+# Option A — wildcard cert + listed custom domains (works with ANY proxy setup,
+# including one that already has a global default cert issuer).
+#
+# Apps under *.<zone> get a single wildcard cert → adding apps needs NO proxy
+# change. Each custom domain is one extra hostname on the subject line.
+# ───────────────────────────────────────────────────────────────────────────
+*.fn.example.com, www.example.com {
+	# import your TLS/DNS-01 config here (a wildcard cert needs DNS-01)
+	reverse_proxy 127.0.0.1:8080
+}
+
+# ───────────────────────────────────────────────────────────────────────────
+# Option B — on-demand TLS (true zero-config custom domains). A single catch-all
+# issues a cert for ANY host deno-edge serves, gated by /_caddy/ask. Use this on a
+# proxy WITHOUT a global default issuer (a bare catch-all conflicts with one).
+# ───────────────────────────────────────────────────────────────────────────
+# global options:
+#   on_demand_tls {
+#       ask http://<deno-edge-caddy-host>:8080/_caddy/ask
+#   }
+#
+# https:// {
+#     tls { on_demand }
+#     reverse_proxy 127.0.0.1:8080
+# }
+
+# DNS: point your app hostnames (or a wildcard *.fn.example.com) at this host.
+# CNAME-ing the wildcard at a name your proxy keeps current lets it track a
+# changing IP with no maintenance.

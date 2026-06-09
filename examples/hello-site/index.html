@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>deno-edge · static site</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        font: 16px/1.6 system-ui, sans-serif;
+        max-width: 40rem;
+        margin: 4rem auto;
+        padding: 0 1.25rem;
+      }
+      code { background: color-mix(in srgb, currentColor 12%, transparent); padding: .1em .35em; border-radius: 4px; }
+      h1 { margin-bottom: .25rem; }
+      .muted { opacity: .7; }
+    </style>
+  </head>
+  <body>
+    <h1>It works.</h1>
+    <p class="muted">This page is served by Caddy's <code>file_server</code> from <code>/srv/sites/hello-site</code>.</p>
+    <p>
+      Drop a built static site into <code>sites/&lt;name&gt;/</code>, add a block to the
+      <code>Caddyfile</code>, and it's live at <code>https://&lt;name&gt;.fn.example.com</code>.
+    </p>
+    <p>Functions live in <code>functions/&lt;name&gt;/index.ts</code> and run on the edge runtime.</p>
+  </body>
+</html>

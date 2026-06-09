@@ -1,0 +1,8 @@
+# local config / secrets — never commit
+.env
+
+# static site content — per-deployment build artifacts (the demo lives in examples/)
+sites/
+
+*.log
+.DS_Store
