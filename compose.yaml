@@ -9,7 +9,7 @@ name: deno-edge
 
 services:
   edge-runtime:
-    image: supabase/edge-runtime:v1.74.0
+    image: supabase/edge-runtime:v1.74.3
     container_name: deno-edge-runtime
     hostname: edge-runtime
     restart: unless-stopped
